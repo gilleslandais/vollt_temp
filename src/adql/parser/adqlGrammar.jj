@@ -16,6 +16,8 @@
  * 
  * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
+ *
+ * TODO:  needs merge (Updated by G.Landais for VizieR)
  */
 
 /*
@@ -32,6 +34,9 @@
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI)
 *  Version: 1.5-1 (07/2019)
+*
+* TODO:  needs merge (Updated by G.Landais for VizieR)
+*               - BINARY operator
 */
 
 							/* ########### */
@@ -1058,6 +1063,15 @@ TOKEN : {
 |	< DIVIDE: "/" >
 }
 
+/*****TODO G.Landais - *********/
+/* ************************************************* */
+/* Logic operators (added by G.Landais : 21/05/2013) */
+/* ************************************************* */
+TOKEN : {
+    < LOGIC_AND: "&" >
+|   < LOGIC_OR: "|" >
+}
+
 /* ******************** */
 /* Comparison operators */
 /* ******************** */
@@ -1666,9 +1680,10 @@ ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn col
 	}
 }
 
+/*****TODO G.Landais update AND/OR *********/
 ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right; } {
 	try{
-		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>))) valueExpr=NumericExpression()
+		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>|<LOGIC_AND>|<LOGIC_OR>))) valueExpr=NumericExpression()
 		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER_CANDIDATE> <LEFT_PAR>) valueExpr=UserDefinedFunction()
@@ -1710,8 +1725,9 @@ ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=n
 	}
 }
 
+/*****TODO G.Landais update AND/OR *********/
 ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
-	(leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE>) rightOp=NumericTerm())?)
+    (leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE> | sign=<LOGIC_AND> | sign=<LOGIC_OR>) rightOp=NumericTerm())?)
 	{
 	if (sign == null)
 		return leftOp;
@@ -1752,8 +1768,9 @@ ADQLOperand Factor(): {boolean negative = false; Token minusSign = null; ADQLOpe
 	}
 }
 
+/*****TODO G.Landais updateTRIM function *********/
 ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;} {
-	leftOp=StringFactor()
+    leftOp=StringFactor()
 	(
 		<CONCAT>
 		rightOp=StringFactor()
